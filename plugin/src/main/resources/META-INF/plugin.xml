@@ -1,0 +1,14 @@
+<idea-plugin>
+    <id>io.github.meymchen.lspf.hello</id>
+    <name>LSPF Hello</name>
+    <vendor url="https://github.com/meymchen">meymchen</vendor>
+    <description><![CDATA[
+        A Rust language server built with lspf, using the JetBrains LSP API.
+        Open a .hello file for example diagnostics, hover, and completion.
+    ]]></description>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lsp</depends>
+    <extensions defaultExtensionNs="com.intellij">
+        <platform.lsp.integrationProvider implementation="io.github.meymchen.lspf.hello.HelloLspIntegrationProvider"/>
+    </extensions>
+</idea-plugin>

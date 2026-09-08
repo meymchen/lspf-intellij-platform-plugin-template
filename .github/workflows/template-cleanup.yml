@@ -1,0 +1,33 @@
+name: Template cleanup
+
+# Runs once in a repository created with "Use this template": it rewrites the
+# template's identity to match the new repository, then deletes itself.
+# It is skipped in the template repository and in forks, which keep their names.
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: >-
+      github.repository != 'meymchen/lspf-intellij-platform-plugin-template'
+      && github.event.repository.fork == false
+      && github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Rewrite template identity
+        run: python3 .github/template-cleanup/cleanup.py "${{ github.repository }}"
+
+      - name: Commit the result
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --quiet --cached && exit 0
+          git commit -m "Apply template cleanup for ${{ github.repository }}"
+          git push

@@ -1,0 +1,62 @@
+name: CI
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+          components: clippy,rustfmt
+      - run: cargo fmt --all -- --check
+        working-directory: server
+      - run: cargo clippy --locked --all-targets -- -D warnings
+        working-directory: server
+      - name: Build and test
+        shell: bash
+        run: bash ./gradlew check buildPlugin --console=plain
+      - name: Verify bundled server
+        shell: python
+        run: |
+          import pathlib, platform, zipfile
+          properties = dict(
+              (part.strip() for part in line.split("=", 1))
+              for line in pathlib.Path("gradle.properties").read_text("utf-8").splitlines()
+              if "=" in line and not line.lstrip().startswith("#")
+          )
+          packages = list(pathlib.Path("build/distributions").glob("*.zip"))
+          assert len(packages) == 1, packages
+          binary = properties["serverBinary"]
+          executable = binary + ".exe" if platform.system() == "Windows" else binary
+          with zipfile.ZipFile(packages[0]) as archive:
+              entries = [i for i in archive.infolist() if i.filename.endswith("/server/" + executable)]
+              assert len(entries) == 1 and entries[0].file_size > 0, entries
+              if platform.system() != "Windows":
+                  assert (entries[0].external_attr >> 16) & 0o111, "Server is not executable"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ runner.os }}-${{ runner.arch }}
+          path: build/distributions/*.zip
+          if-no-files-found: error
