@@ -31,8 +31,9 @@ intellijPlatform {
     pluginVerification { ides { recommended() } }
 }
 
-// A copy that skipped the template cleanup would ship the template's own plugin
-// ID and collide with it. The check goes quiet once the cleanup has run.
+// --- template identity check; the template cleanup removes this block ---
+// A copy that skipped the cleanup would ship the template's own plugin ID and
+// collide with it, so warn about it before the distribution is assembled.
 val templatePluginId = "io.github.meymchen.lspf.hello"
 val templateIdentityWarning =
     "This build still uses the template plugin ID $templatePluginId. Run " +
@@ -50,6 +51,7 @@ val checkTemplateIdentity = tasks.register("checkTemplateIdentity") {
     }
 }
 tasks.named("buildPlugin") { dependsOn(checkTemplateIdentity) }
+// --- end template identity check ---
 
 val serverName = providers.gradleProperty("serverBinary")
 val windows = System.getProperty("os.name").startsWith("Windows")

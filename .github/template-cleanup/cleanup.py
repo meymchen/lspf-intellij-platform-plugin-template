@@ -109,6 +109,16 @@ the plugin reads at runtime.
 """
 
 
+def remove_identity_check(root: Path) -> None:
+    """Drop the guard that warns while the template's plugin ID is configured."""
+    path = root / "build.gradle.kts"
+    text = path.read_text(encoding="utf-8")
+    end_marker = "// --- end template identity check ---\n"
+    start = text.index("// --- template identity check")
+    end = text.index(end_marker, start) + len(end_marker)
+    path.write_text(text[:start] + text[end:].lstrip("\n"), encoding="utf-8")
+
+
 def rewrite_readme(root: Path, name: str, repository: str) -> None:
     path = root / "README.md"
     text = path.read_text(encoding="utf-8")
@@ -220,6 +230,7 @@ def main() -> None:
         f'env!("CARGO_BIN_EXE_{server_binary}")',
     )
 
+    remove_identity_check(root)
     rewrite_readme(root, plugin_name, repository)
 
     shutil.rmtree(root / ".github/template-cleanup")
