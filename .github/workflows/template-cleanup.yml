@@ -20,8 +20,11 @@ concurrency:
 
 jobs:
   cleanup:
+    # is_template covers a renamed template; the slug covers this one before its
+    # template flag is set. Either alone would let the template clean itself.
     if: >-
       github.repository != 'meymchen/lspf-intellij-platform-plugin-template'
+      && github.event.repository.is_template == false
       && github.event.repository.fork == false
       && github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ description = "A minimal language server and IntelliJ Platform plugin built with
 publish = false
 
 [dependencies]
-lspf = { version = "1.0.0", default-features = false, features = ["stdio"] }
+lspf = { version = "1", default-features = false, features = ["stdio"] }
 tokio = { version = "1", features = ["macros", "rt"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
