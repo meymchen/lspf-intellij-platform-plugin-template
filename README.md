@@ -8,6 +8,54 @@ Requires a JetBrains IDE **2026.2 or later** with the `com.intellij.modules.lsp`
 module. The build targets IntelliJ IDEA 2026.2 and declares minimum build 262.
 See the [official list of supported IDEs](https://plugins.jetbrains.com/docs/intellij/language-server-protocol.html#supported-ides).
 
+## Start a project from this template
+
+However you take a copy, the first step is the same: rewrite the template's
+identity, so that your plugin does not ship this repository's plugin ID. The
+cleanup rewrites `group`, `pluginId`, `pluginName`, and `serverBinary` in
+`gradle.properties`; `rootProject.name` in `settings.gradle.kts`; the ID, name,
+vendor, and provider class in `plugin.xml`; the Java package directory; the Rust
+package name in `server/Cargo.toml` and `server/Cargo.lock`; and the executable
+referenced by `server/tests/protocol.rs`. It then removes itself and this section.
+
+Names come from the repository slug: `owner/my-lsp-plugin` produces the package
+`io.github.owner.mylspplugin`, the plugin name `My Lsp Plugin`, and the server
+binary `my-lsp-plugin`.
+
+**Use this template.** The
+[cleanup workflow](.github/workflows/template-cleanup.yml) runs on the new
+repository's default branch and commits the result. Creating a repository from a
+template does not reliably emit a push event, so if no run appears, start
+**Template cleanup** by hand from the **Actions** tab. The workflow skips this
+template repository and forks, and a second run is a no-op.
+
+**Clone, or download the source archive.** Run the script yourself, from any
+directory:
+
+```shell
+python3 .github/template-cleanup/cleanup.py owner/my-lsp-plugin
+```
+
+Use `python` or `py -3` on Windows. The script only edits and moves files, so it
+needs neither Git history nor a remote, and it works the same in an extracted
+archive. Until it has run, `buildPlugin` warns that the build still carries the
+template's plugin ID.
+
+The language-specific work stays yours:
+
+1. Change the file matching and language ID in `HelloLspClientDescriptor.java`,
+   and rename the `Hello*` classes if the example name no longer fits.
+2. Set the vendor URL and description in
+   `plugin/src/main/resources/META-INF/plugin.xml`.
+3. Replace the handlers in `server/src/main.rs`, extend `server/tests/protocol.rs`,
+   and update `examples/` and this README.
+4. Regenerate `server/Cargo.lock` by running `cargo check` from `server/`.
+
+`gradle.properties` is the single source for the plugin name, plugin ID, and
+bundled executable name. Gradle writes them into `lspf-server.properties`, which
+the plugin reads at runtime, so the LSP service display name and the launched
+command follow it without a second edit.
+
 ## Layout
 
 ```text
@@ -87,44 +135,6 @@ Each ZIP targets the OS and architecture on which it was built. CI builds
 separate Linux, Windows, and macOS artifacts and checks their server entries.
 Before a Marketplace release, assemble and select binaries for every supported
 target, or distribute explicitly labelled host packages.
-
-## Use this template
-
-Press **Use this template** on GitHub. The
-[template cleanup workflow](.github/workflows/template-cleanup.yml) runs once on
-the new repository's default branch and rewrites the template's identity to match
-it: `group`, `pluginId`, `pluginName`, and `serverBinary` in `gradle.properties`;
-`rootProject.name` in `settings.gradle.kts`; the ID, name, vendor, and provider
-class in `plugin.xml`; the Java package directory; the Rust package name in
-`server/Cargo.toml` and `server/Cargo.lock`; and the executable referenced by
-`server/tests/protocol.rs`. It then deletes itself and this section. The workflow
-is skipped in this template repository and in forks.
-
-Names come from the repository slug: `owner/my-lsp-plugin` produces the package
-`io.github.owner.mylspplugin`, the plugin name `My Lsp Plugin`, and the server
-binary `my-lsp-plugin`.
-
-To copy the repository locally instead, run the same script from the repository
-root:
-
-```shell
-python3 .github/template-cleanup/cleanup.py owner/my-lsp-plugin
-```
-
-The language-specific work stays yours:
-
-1. Change the file matching and language ID in `HelloLspClientDescriptor.java`,
-   and rename the `Hello*` classes if the example name no longer fits.
-2. Set the vendor URL and description in
-   `plugin/src/main/resources/META-INF/plugin.xml`.
-3. Replace the handlers in `server/src/main.rs`, extend `server/tests/protocol.rs`,
-   and update `examples/` and this README.
-4. Regenerate `server/Cargo.lock` by running `cargo check` from `server/`.
-
-`gradle.properties` is the single source for the plugin name, plugin ID, and
-bundled executable name. Gradle writes them into `lspf-server.properties`, which
-the plugin reads at runtime, so the LSP service display name and the launched
-command follow it without a second edit.
 
 ## License and sources
 

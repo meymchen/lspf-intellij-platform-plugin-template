@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Rewrite the template's identity for a repository created from it.
 
-Run from the repository root, either through the template-cleanup workflow or
-by hand:
+Run it through the template-cleanup workflow or by hand from any directory:
 
     python3 .github/template-cleanup/cleanup.py owner/repository
+
+It only touches files, so it works the same in a clone, in an extracted source
+archive, and on a checkout inside a workflow.
 
 Every replacement below is anchored to a known line so that unrelated
 occurrences of the same words survive: the links to the upstream `lspf` crate
@@ -122,8 +124,8 @@ def rewrite_readme(root: Path, name: str, repository: str) -> None:
         1,
     )
 
-    start = text.index("## Use this template")
-    end = text.index("## License and sources", start)
+    start = text.index("## Start a project from this template")
+    end = text.index("## Layout", start)
     text = text[:start] + NEXT_STEPS + text[end:]
 
     path.write_text(text, encoding="utf-8")
@@ -135,7 +137,11 @@ def main() -> None:
         raise SystemExit("usage: cleanup.py <owner>/<repository>")
     owner, repository = slug.split("/", 1)
 
-    root = Path.cwd()
+    # Locate the repository from this file rather than the working directory, so
+    # the script can be started from anywhere.
+    root = Path(__file__).resolve().parents[2]
+    if not (root / "settings.gradle.kts").is_file():
+        raise SystemExit(f"{root}: not a checkout of the template")
     group = f"io.github.{package_segment(owner)}"
     plugin_id = f"{group}.{package_segment(repository)}"
     package_path = plugin_id.replace(".", "/")

@@ -3,12 +3,20 @@ name: Template cleanup
 # Runs once in a repository created with "Use this template": it rewrites the
 # template's identity to match the new repository, then deletes itself.
 # It is skipped in the template repository and in forks, which keep their names.
+#
+# Creating a repository from a template does not reliably emit a push event, so
+# this may need to be started by hand from the Actions tab. Running it a second
+# time is harmless: the job succeeds without changes once the cleanup is gone.
 on:
   push:
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: template-cleanup
+  cancel-in-progress: false
 
 jobs:
   cleanup:
@@ -21,7 +29,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Rewrite template identity
-        run: python3 .github/template-cleanup/cleanup.py "${{ github.repository }}"
+        run: |
+          if [ ! -f .github/template-cleanup/cleanup.py ]; then
+            echo "Template cleanup has already been applied."
+            exit 0
+          fi
+          python3 .github/template-cleanup/cleanup.py "${{ github.repository }}"
 
       - name: Commit the result
         run: |

@@ -31,13 +31,33 @@ intellijPlatform {
     pluginVerification { ides { recommended() } }
 }
 
+// A copy that skipped the template cleanup would ship the template's own plugin
+// ID and collide with it. The check goes quiet once the cleanup has run.
+val templatePluginId = "io.github.meymchen.lspf.hello"
+val templateIdentityWarning =
+    "This build still uses the template plugin ID $templatePluginId. Run " +
+        "'python3 .github/template-cleanup/cleanup.py <owner>/<repository>' first."
+val checkTemplateIdentity = tasks.register("checkTemplateIdentity") {
+    // Only local values may cross into the task action; capturing a script
+    // property would make the task unserializable for the configuration cache.
+    val configured = providers.gradleProperty("pluginId")
+    val template = templatePluginId
+    val warning = templateIdentityWarning
+    doLast {
+        if (configured.get() == template) {
+            println(warning)
+        }
+    }
+}
+tasks.named("buildPlugin") { dependsOn(checkTemplateIdentity) }
+
 val serverName = providers.gradleProperty("serverBinary")
 val windows = System.getProperty("os.name").startsWith("Windows")
 val serverExecutable = serverName.map { it + if (windows) ".exe" else "" }
 val cargoOutput = layout.buildDirectory.dir("cargo")
 val cargoCommand = providers.environmentVariable("CARGO").orElse("cargo")
 
-val buildServer by tasks.registering(Exec::class) {
+val buildServer = tasks.register<Exec>("buildServer") {
     group = "build"
     description = "Build the native Rust server for the current host."
     workingDir("server")
@@ -57,7 +77,7 @@ tasks.withType<PrepareSandboxTask>().configureEach {
     }
 }
 
-val generateServerMetadata by tasks.registering {
+val generateServerMetadata = tasks.register("generateServerMetadata") {
     val output = layout.buildDirectory.dir("generated/serverMetadata")
     inputs.property("serverBinary", serverExecutable)
     inputs.property("pluginId", providers.gradleProperty("pluginId"))
