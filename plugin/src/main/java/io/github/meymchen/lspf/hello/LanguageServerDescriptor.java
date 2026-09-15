@@ -10,13 +10,36 @@ import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
 
-final class HelloLspClientDescriptor extends ProjectWideLspClientDescriptor {
-    HelloLspClientDescriptor(Project project) {
+/**
+ * Connects the IDE to one language server per project.
+ *
+ * <p>Which files it claims, and the language ID it reports for them, come from
+ * {@code fileExtension} and {@code languageId} in {@code gradle.properties}.
+ */
+final class LanguageServerDescriptor extends ProjectWideLspClientDescriptor {
+    LanguageServerDescriptor(Project project) {
         super(project, ServerMetadata.get("pluginName"));
     }
 
     static boolean supports(VirtualFile file) {
-        return !file.isDirectory() && "hello".equals(file.getExtension());
+        return !file.isDirectory()
+                && matchesExtension(ServerMetadata.get("fileExtension"), file.getExtension());
+    }
+
+    /**
+     * Matches a file extension against the configured list, which holds one extension
+     * or several separated by commas.
+     */
+    static boolean matchesExtension(String configured, String extension) {
+        if (extension == null || extension.isEmpty()) {
+            return false;
+        }
+        for (String candidate : configured.split(",")) {
+            if (candidate.trim().equalsIgnoreCase(extension)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -26,7 +49,7 @@ final class HelloLspClientDescriptor extends ProjectWideLspClientDescriptor {
 
     @Override
     public @NotNull String getLanguageId(@NotNull VirtualFile file) {
-        return "hello";
+        return ServerMetadata.get("languageId");
     }
 
     @Override

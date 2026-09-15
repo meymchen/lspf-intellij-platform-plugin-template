@@ -5,12 +5,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.platform.lsp.api.LspIntegrationProvider;
 import org.jetbrains.annotations.NotNull;
 
-public final class HelloLspIntegrationProvider implements LspIntegrationProvider {
+public final class LanguageServerIntegrationProvider implements LspIntegrationProvider {
     @Override
     public void fileOpened(@NotNull Project project, @NotNull VirtualFile file,
                            @NotNull LspClientStarter clientStarter) {
-        if (HelloLspClientDescriptor.supports(file)) {
-            clientStarter.ensureClientStarted(new HelloLspClientDescriptor(project));
+        if (LanguageServerDescriptor.supports(file)) {
+            clientStarter.ensureClientStarted(new LanguageServerDescriptor(project));
         }
     }
 }

@@ -84,10 +84,14 @@ val generateServerMetadata = tasks.register("generateServerMetadata") {
     inputs.property("serverBinary", serverExecutable)
     inputs.property("pluginId", providers.gradleProperty("pluginId"))
     inputs.property("pluginName", providers.gradleProperty("pluginName"))
+    inputs.property("fileExtension", providers.gradleProperty("fileExtension"))
+    inputs.property("languageId", providers.gradleProperty("languageId"))
     outputs.dir(output)
     val binary = serverExecutable
     val id = providers.gradleProperty("pluginId")
     val name = providers.gradleProperty("pluginName")
+    val extension = providers.gradleProperty("fileExtension")
+    val language = providers.gradleProperty("languageId")
     doLast {
         val file = output.get().file("lspf-server.properties").asFile
         file.parentFile.mkdirs()
@@ -97,7 +101,10 @@ val generateServerMetadata = tasks.register("generateServerMetadata") {
         file.writeText(
             "binary=" + escape(binary.get()) +
                 "\npluginId=" + escape(id.get()) +
-                "\npluginName=" + escape(name.get()) + "\n"
+                "\npluginName=" + escape(name.get()) +
+                // What the plugin claims in the IDE, and what it calls it on the wire.
+                "\nfileExtension=" + escape(extension.get()) +
+                "\nlanguageId=" + escape(language.get()) + "\n"
         )
     }
 }

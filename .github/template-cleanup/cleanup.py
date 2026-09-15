@@ -94,17 +94,19 @@ The template cleanup already applied this repository's name to `gradle.propertie
 `settings.gradle.kts`, `plugin.xml`, the Java package, and the Rust package. What
 remains is language-specific:
 
-1. Change the file matching and language ID in `HelloLspClientDescriptor.java`,
-   and rename the `Hello*` classes if the example name no longer fits.
+1. Set `fileExtension` and `languageId` in `gradle.properties`, and rename
+   `examples/example.hello` to match. `fileExtension` takes one extension, or
+   several separated by commas.
 2. Set the vendor URL and description in
    `plugin/src/main/resources/META-INF/plugin.xml`.
-3. Replace the handlers in `server/src/main.rs`, extend `server/tests/protocol.rs`,
-   and update `examples/` and this README.
-4. Regenerate `server/Cargo.lock` by running `cargo check` from `server/`.
+3. Write the language server: replace the handlers in `server/src/main.rs` and
+   extend `server/tests/protocol.rs`. See the
+   [lspf documentation](https://github.com/meymchen/lspf).
 
-`gradle.properties` stays the single source for the plugin name, plugin ID, and
-bundled executable name: Gradle writes them into `lspf-server.properties`, which
-the plugin reads at runtime.
+`gradle.properties` stays the single source for the plugin name and ID, the bundled
+executable name, and the files the plugin claims: Gradle writes them into
+`lspf-server.properties`, which the plugin reads at runtime. No Java file names any
+of them, so nothing here needs renaming.
 
 """
 
@@ -195,8 +197,8 @@ def main() -> None:
     )
     replace_once(
         manifest,
-        f'implementation="{OLD_PLUGIN_ID}.HelloLspIntegrationProvider"',
-        f'implementation="{plugin_id}.HelloLspIntegrationProvider"',
+        f'implementation="{OLD_PLUGIN_ID}.LanguageServerIntegrationProvider"',
+        f'implementation="{plugin_id}.LanguageServerIntegrationProvider"',
     )
 
     for source_root in JAVA_SOURCE_ROOTS:
