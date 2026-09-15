@@ -108,12 +108,12 @@ documentation. Invoke **Basic Completion** after typing `he` to see the `hello`
 item with the detail `Example completion from lspf`. The server also publishes
 an informational diagnostic.
 
-The plugin appears in the Language Services widget in the status bar, with its own
-icon and a link to its settings page. That page also sits under **Settings > Tools**,
-named after the plugin, and holds three things: whether the plugin starts a server at
-all, which executable it starts, and how much that server logs. Applying a change
-restarts the running servers, which is also how a rebuilt server takes effect without
-restarting the IDE.
+The plugin appears in the Language Services widget in the status bar, with its
+own icon and a link to its settings page. That page also sits under
+**Settings > Tools**, named after the plugin, and holds three things: whether
+the plugin starts a server at all, which executable it starts, and how much
+that server logs. Applying a change restarts the running servers, which is also
+how a rebuilt server takes effect without restarting the IDE.
 
 ## Point the sandbox at another server
 
@@ -198,8 +198,44 @@ The ZIP in `build/distributions/` includes the native server under
 
 Each ZIP targets the OS and architecture on which it was built. CI builds
 separate Linux, Windows, and macOS artifacts and checks their server entries.
-Before a Marketplace release, assemble and select binaries for every supported
-target, or distribute explicitly labelled host packages.
+
+## What this template leaves to you
+
+The example is complete as an example. Four things a real plugin needs are
+deliberately absent, because each one is a decision rather than a default.
+
+**One package per operating system.** The ZIP carries the server built on the
+machine that produced it, and `ServerBinary.resolveBundled` looks in exactly one
+place, `server/<executable>`. A Marketplace upload is a single file that has to
+serve every platform, so publishing there means adopting a per-platform layout
+such as `server/<os>-<arch>/<executable>`, teaching `resolveBundled` to pick the
+running host, and adding a release job that merges the three CI artifacts into
+one archive. Until then, hand out the per-OS ZIPs that CI already produces,
+labelled by platform.
+
+**A release path.** `verifyPlugin` runs the IntelliJ Plugin Verifier against
+whole IDEs. It is configured in `build.gradle.kts` but kept out of `check`,
+because it downloads them; run it before you publish. Signing and uploading need
+`signing` and `publishing` blocks in the `intellijPlatform` extension, a
+Marketplace token and a certificate in repository secrets, and a
+`META-INF/pluginIcon.svg`, which this template does not carry. Change notes want
+a changelog to generate them from.
+
+**A file type of your own.** The plugin claims files by extension, which is all
+the LSP integration needs, but the IDE still has no file type for them: no
+highlighting while the server is starting or stopped, no comment action, no icon
+in the project tree. Registering a `FileType` and a `Language` is separate work
+from the LSP wiring, and it is what makes the files feel like a supported
+language rather than plain text with annotations.
+
+**Knowing which features the IDE consumes.** A capability your server advertises
+does nothing until the platform supports it, and the supported set grows with
+each release; the
+[LSP documentation](https://plugins.jetbrains.com/docs/intellij/language-server-protocol.html)
+is the current list. `LspClientDescriptor.lspCustomization` is where a plugin
+narrows or extends that set, and it is the first place to look when a correct
+server produces nothing in the editor — on-type formatting, for one, is off
+unless a plugin turns it on. This template does not override it.
 
 ## License and sources
 
