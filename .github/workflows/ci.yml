@@ -60,3 +60,76 @@ jobs:
           name: plugin-${{ runner.os }}-${{ runner.arch }}
           path: build/distributions/*.zip
           if-no-files-found: error
+
+  # --- template self-test; the template cleanup removes this job ---
+  # The cleanup script is what this repository exists to provide, and it fails by
+  # raising on an anchor it can no longer find. Run it here, on a copy, so that a
+  # reworded README or a renamed class breaks this build instead of someone else's
+  # new repository.
+  cleanup:
+    name: Template cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
+      - name: Apply the cleanup to a copy
+        run: |
+          mkdir generated
+          git archive HEAD | tar -x -C generated
+          python3 generated/.github/template-cleanup/cleanup.py acme/my-lang-lsp
+      - name: Check what the cleanup produced
+        shell: python
+        run: |
+          import pathlib, re
+
+          root = pathlib.Path("generated")
+          properties = dict(
+              (part.strip() for part in line.split("=", 1))
+              for line in (root / "gradle.properties").read_text("utf-8").splitlines()
+              if "=" in line and not line.lstrip().startswith("#")
+          )
+          assert properties["pluginId"] == "io.github.acme.mylanglsp", properties
+          assert properties["serverBinary"] == "my-lang-lsp", properties
+
+          readme = (root / "README.md").read_text("utf-8").splitlines()
+          assert readme[0] == "# My Lang Lsp", readme[0]
+          assert "## Next steps" in "\n".join(readme)
+
+          # Every class the manifest names has to exist under the moved package.
+          manifest = (root / "plugin/src/main/resources/META-INF/plugin.xml").read_text("utf-8")
+          classes = re.findall(r'(?:implementation|instance)="([\w.]+)"', manifest)
+          assert classes, manifest
+          for name in classes:
+              source = root / "plugin/src/main/java" / (name.replace(".", "/") + ".java")
+              assert source.is_file(), name
+
+          # The cleanup removes itself, this job included.
+          assert not (root / ".github/template-cleanup").exists()
+          assert not (root / ".github/workflows/template-cleanup.yml").exists()
+          workflow = (root / ".github/workflows/ci.yml").read_text("utf-8")
+          assert "template self-test" not in workflow
+          assert "\n  build:\n" in workflow
+
+          # Nothing may still name this template, apart from the credit to lspf.
+          template = re.compile(r"io\.github\.meymchen|lspf-hello|LSPF Hello|lspf-intellij-platform")
+          for path in sorted(root.rglob("*")):
+              if not path.is_file() or path.name == "UPSTREAM.md":
+                  continue
+              try:
+                  text = path.read_text("utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              left = [line for line in text.splitlines() if template.search(line)]
+              assert not left, (path, left)
+      - name: Build and test the generated project
+        working-directory: generated
+        run: bash ./gradlew check --console=plain
+  # --- end template self-test ---
