@@ -33,6 +33,12 @@ jobs:
       # Cache what a run downloads, not what it compiles. The IntelliJ Platform archive
       # alone is 1.6 GB and Gradle keeps it in modules-2, while rebuilding this server
       # from cached crate sources costs under a minute and would cost a lot of cache.
+      - id: platform
+        name: Read the target platform version
+        shell: bash
+        run: |
+          version=$(grep '^platformVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
         with:
           path: |
@@ -40,7 +46,7 @@ jobs:
             !~/.gradle/caches/modules-2/*.lock
             !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
-          key: gradle-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts', 'gradle.properties') }}
+          key: gradle-${{ runner.os }}-${{ steps.platform.outputs.version }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts') }}
           restore-keys: gradle-${{ runner.os }}-
       - uses: actions/cache@v4
         with:
@@ -101,6 +107,12 @@ jobs:
           toolchain: stable
       # The same keys as the build job: the generated project renames the plugin, but it
       # resolves the same platform artifact and the same crates.
+      - id: platform
+        name: Read the target platform version
+        shell: bash
+        run: |
+          version=$(grep '^platformVersion=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: actions/cache@v4
         with:
           path: |
@@ -108,7 +120,7 @@ jobs:
             !~/.gradle/caches/modules-2/*.lock
             !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
-          key: gradle-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts', 'gradle.properties') }}
+          key: gradle-${{ runner.os }}-${{ steps.platform.outputs.version }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts') }}
           restore-keys: gradle-${{ runner.os }}-
       - uses: actions/cache@v4
         with:
