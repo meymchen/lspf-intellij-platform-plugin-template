@@ -43,8 +43,6 @@ jobs:
         with:
           path: |
             ~/.gradle/caches/modules-2
-            !~/.gradle/caches/modules-2/*.lock
-            !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
           key: gradle-${{ runner.os }}-${{ steps.platform.outputs.version }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts') }}
           restore-keys: gradle-${{ runner.os }}-
@@ -85,6 +83,12 @@ jobs:
           name: plugin-${{ runner.os }}-${{ runner.arch }}
           path: build/distributions/*.zip
           if-no-files-found: error
+        # A live daemon holds modules-2.lock open, and on Windows that stops tar from
+        # reading it, which fails the whole cache upload. Let it exit first.
+      - name: Stop the Gradle daemon before the cache is archived
+        if: always()
+        shell: bash
+        run: bash ./gradlew --stop
 
   # --- template self-test; the template cleanup removes this job ---
   # The cleanup script is what this repository exists to provide, and it fails by
@@ -117,8 +121,6 @@ jobs:
         with:
           path: |
             ~/.gradle/caches/modules-2
-            !~/.gradle/caches/modules-2/*.lock
-            !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
           key: gradle-${{ runner.os }}-${{ steps.platform.outputs.version }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts') }}
           restore-keys: gradle-${{ runner.os }}-
@@ -181,4 +183,7 @@ jobs:
       - name: Build and test the generated project
         working-directory: generated
         run: bash ./gradlew check --console=plain
+      - name: Stop the Gradle daemon before the cache is archived
+        if: always()
+        run: bash ./gradlew --stop
   # --- end template self-test ---
