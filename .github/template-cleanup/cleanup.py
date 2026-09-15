@@ -121,7 +121,12 @@ def remove_identity_check(root: Path) -> None:
     path.write_text(text[:start] + text[end:].lstrip("\n"), encoding="utf-8")
 
 
-def rewrite_readme(root: Path, name: str, repository: str) -> None:
+def environment_prefix(server_binary: str) -> str:
+    """Mirror ServerOverrides.environmentVariable, which names the developer overrides."""
+    return re.sub(r"[^A-Za-z0-9]", "_", server_binary).upper()
+
+
+def rewrite_readme(root: Path, name: str, repository: str, server_binary: str) -> None:
     path = root / "README.md"
     text = path.read_text(encoding="utf-8")
 
@@ -135,6 +140,17 @@ def rewrite_readme(root: Path, name: str, repository: str) -> None:
         f"`{repository}/server/`",
         1,
     )
+
+    # The developer overrides are named after the server binary, so the
+    # troubleshooting sections have to follow it. Both spellings are specific
+    # enough that no link to the upstream `lspf` crate matches them.
+    for old, new in (
+        (OLD_SERVER_BINARY, server_binary),
+        (environment_prefix(OLD_SERVER_BINARY), environment_prefix(server_binary)),
+    ):
+        if old not in text:
+            raise SystemExit(f"{path}: expected to find {old!r}")
+        text = text.replace(old, new)
 
     start = text.index("## Start a project from this template")
     end = text.index("## Layout", start)
@@ -233,7 +249,7 @@ def main() -> None:
     )
 
     remove_identity_check(root)
-    rewrite_readme(root, plugin_name, repository)
+    rewrite_readme(root, plugin_name, repository, server_binary)
 
     shutil.rmtree(root / ".github/template-cleanup")
     (root / ".github/workflows/template-cleanup.yml").unlink()

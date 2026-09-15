@@ -45,6 +45,33 @@ public class LanguageServerIntegrationProviderTest extends BasePlatformTestCase 
         assertFalse(LanguageServerDescriptor.matchesExtension("hello,", ""));
     }
 
+    public void testServerPathOverrideSelectsTheConfiguredExecutable() throws Exception {
+        var directory = Files.createTempDirectory("lspf-server-override");
+        var executable = Files.createFile(directory.resolve("debug-server"));
+        assertTrue(executable.toFile().setExecutable(true));
+        var property = ServerMetadata.get("serverName") + ".server.path";
+        System.setProperty(property, executable.toString());
+        try {
+            var command = new LanguageServerDescriptor(getProject()).createCommandLine();
+            assertEquals(executable.toString(), command.getExePath());
+        } finally {
+            System.clearProperty(property);
+            Files.delete(executable);
+            Files.delete(directory);
+        }
+    }
+
+    public void testLogOverrideReachesTheServerAsRustLog() {
+        var property = ServerMetadata.get("serverName") + ".server.log";
+        System.setProperty(property, "debug");
+        try {
+            var command = new LanguageServerDescriptor(getProject()).createCommandLine();
+            assertEquals("debug", command.getEnvironment().get("RUST_LOG"));
+        } finally {
+            System.clearProperty(property);
+        }
+    }
+
     public void testUnrelatedFileDoesNotStartClient() {
         var file = new LightVirtualFile("example.txt", "hello");
         assertNull(clientStartedFor("example.txt"));
