@@ -74,7 +74,7 @@ jobs:
               assert len(entries) == 1 and entries[0].file_size > 0, entries
               if platform.system() != "Windows":
                   assert (entries[0].external_attr >> 16) & 0o111, "Server is not executable"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: plugin-${{ runner.os }}-${{ runner.arch }}
           path: build/distributions/*.zip
