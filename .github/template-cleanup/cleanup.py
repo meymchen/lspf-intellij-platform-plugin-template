@@ -216,6 +216,11 @@ def main() -> None:
         f'implementation="{OLD_PLUGIN_ID}.LanguageServerIntegrationProvider"',
         f'implementation="{plugin_id}.LanguageServerIntegrationProvider"',
     )
+    replace_once(
+        manifest,
+        f'instance="{OLD_PLUGIN_ID}.ServerConfigurable" id="{OLD_PLUGIN_ID}.settings"',
+        f'instance="{plugin_id}.ServerConfigurable" id="{plugin_id}.settings"',
+    )
 
     for source_root in JAVA_SOURCE_ROOTS:
         directory = root / source_root / OLD_PACKAGE_PATH

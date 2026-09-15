@@ -68,7 +68,7 @@ server/
   src/             Rust language logic and stdio entry point
   tests/           LSP protocol integration tests
 plugin/
-  src/main/java/   JetBrains LSP provider and bundled server lookup
+  src/main/java/   JetBrains LSP provider, settings page, and server lookup
   src/main/resources/META-INF/plugin.xml
   src/test/java/   Plugin integration and executable lookup tests
 examples/          Sample .hello document
@@ -104,8 +104,14 @@ Only `.hello` files start this example server; Markdown files are not supported.
 Place the caret on `hello` and invoke **Quick Documentation** to see the server's
 documentation. Invoke **Basic Completion** after typing `he` to see the `hello`
 item with the detail `Example completion from lspf`. The server also publishes
-an informational diagnostic. The IDE's Language Services widget provides LSP
-connection status.
+an informational diagnostic.
+
+The plugin appears in the Language Services widget in the status bar, with its own
+icon and a link to its settings page. That page also sits under **Settings > Tools**,
+named after the plugin, and holds three things: whether the plugin starts a server at
+all, which executable it starts, and how much that server logs. Applying a change
+restarts the running servers, which is also how a rebuilt server takes effect without
+restarting the IDE.
 
 ## Point the sandbox at another server
 
@@ -120,18 +126,21 @@ properties redirect that while you are working on the server itself:
 from a separate checkout — and a relative path resolves against this repository.
 `serverLog` becomes the server's `RUST_LOG` filter, so `debug` or `lspf=trace`
 reaches the tracing subscriber in `server/src/log_format.rs`. Gradle still
-builds and bundles the release server; the override only changes which
-executable the plugin starts, and a rebuilt server takes effect once the sandbox
-IDE restarts.
+builds and bundles the release server; these only change which executable the
+plugin starts.
 
 Gradle passes both as system properties of the sandbox IDE:
 `lspf-hello.server.path` and `lspf-hello.server.log`. Outside Gradle, set those
 in **Help > Edit Custom VM Options**, or use the environment variables
-`LSPF_HELLO_SERVER_PATH` and `LSPF_HELLO_SERVER_LOG`; the system property wins.
-The names follow `serverBinary` in `gradle.properties`, so a renamed copy of
-this template gets its own and two plugins never read each other's settings.
-Both sources belong to the IDE process, which is why an opened project can never
-select the executable that the plugin runs.
+`LSPF_HELLO_SERVER_PATH` and `LSPF_HELLO_SERVER_LOG`. The names follow
+`serverBinary` in `gradle.properties`, so a renamed copy of this template gets
+its own and two plugins never read each other's.
+
+Three sources answer each question, in this order: the settings page, then the
+system property, then the environment variable. The settings page comes first
+because it is the one a user can see — leave a field empty to fall back. All
+three belong to the IDE, which is why an opened project can never select the
+executable that the plugin runs.
 
 ## Troubleshooting
 
