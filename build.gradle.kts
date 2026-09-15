@@ -151,4 +151,8 @@ tasks.register<Exec>("testServer") {
     workingDir("server")
     commandLine(cargoCommand.get(), "test", "--locked")
 }
-tasks.named("check") { dependsOn("testServer") }
+// verifyPluginStructure reads plugin.xml the way the platform does and takes seconds.
+// Two verifications stay out: verifyPlugin downloads whole IDEs and belongs to a
+// release, and verifyPluginProjectConfiguration reports a Java version mismatch in
+// either direction, because the build table in this plugin version predates 2026.2.
+tasks.named("check") { dependsOn("testServer", "verifyPluginStructure") }
