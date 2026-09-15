@@ -9,6 +9,6 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.lsp</depends>
     <extensions defaultExtensionNs="com.intellij">
-        <platform.lsp.integrationProvider implementation="io.github.meymchen.lspf.hello.HelloLspIntegrationProvider"/>
+        <platform.lsp.integrationProvider implementation="io.github.meymchen.lspf.hello.LanguageServerIntegrationProvider"/>
     </extensions>
 </idea-plugin>
