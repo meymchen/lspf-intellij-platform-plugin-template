@@ -1,5 +1,7 @@
+import org.gradle.process.CommandLineArgumentProvider
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
+import org.jetbrains.intellij.platform.gradle.tasks.RunIdeTask
 
 plugins {
     java
@@ -82,12 +84,14 @@ tasks.withType<PrepareSandboxTask>().configureEach {
 val generateServerMetadata = tasks.register("generateServerMetadata") {
     val output = layout.buildDirectory.dir("generated/serverMetadata")
     inputs.property("serverBinary", serverExecutable)
+    inputs.property("serverName", serverName)
     inputs.property("pluginId", providers.gradleProperty("pluginId"))
     inputs.property("pluginName", providers.gradleProperty("pluginName"))
     inputs.property("fileExtension", providers.gradleProperty("fileExtension"))
     inputs.property("languageId", providers.gradleProperty("languageId"))
     outputs.dir(output)
     val binary = serverExecutable
+    val plain = serverName
     val id = providers.gradleProperty("pluginId")
     val name = providers.gradleProperty("pluginName")
     val extension = providers.gradleProperty("fileExtension")
@@ -100,6 +104,8 @@ val generateServerMetadata = tasks.register("generateServerMetadata") {
             value.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
         file.writeText(
             "binary=" + escape(binary.get()) +
+                // The name without the .exe suffix; it names the developer overrides.
+                "\nserverName=" + escape(plain.get()) +
                 "\npluginId=" + escape(id.get()) +
                 "\npluginName=" + escape(name.get()) +
                 // What the plugin claims in the IDE, and what it calls it on the wire.
@@ -108,6 +114,26 @@ val generateServerMetadata = tasks.register("generateServerMetadata") {
         )
     }
 }
+// Developer overrides for the sandbox IDE, passed as its own system properties:
+//   ./gradlew runIde -PserverPath=build/cargo/debug/<serverBinary> -PserverLog=debug
+// The plugin launches the named executable instead of the bundled one, and hands
+// the filter to the server as RUST_LOG. Both are optional and change nothing else.
+val serverPathOverride = providers.gradleProperty("serverPath")
+val serverLogOverride = providers.gradleProperty("serverLog")
+tasks.withType<RunIdeTask>().configureEach {
+    // Resolve to plain strings here; the provider itself must not cross into the
+    // argument provider, which Gradle evaluates after the configuration cache.
+    val prefix = serverName.get()
+    val path = serverPathOverride.orNull?.let { file(it).absolutePath }
+    val filter = serverLogOverride.orNull
+    jvmArgumentProviders += CommandLineArgumentProvider {
+        buildList {
+            path?.let { add("-D$prefix.server.path=$it") }
+            filter?.let { add("-D$prefix.server.log=$it") }
+        }
+    }
+}
+
 sourceSets {
     main {
         java.setSrcDirs(listOf("plugin/src/main/java"))

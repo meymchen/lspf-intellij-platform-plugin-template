@@ -107,6 +107,57 @@ item with the detail `Example completion from lspf`. The server also publishes
 an informational diagnostic. The IDE's Language Services widget provides LSP
 connection status.
 
+## Point the sandbox at another server
+
+`runIde` starts the server bundled into the sandbox plugin. Two Gradle
+properties redirect that while you are working on the server itself:
+
+```powershell
+.\gradlew.bat runIde -PserverPath=build/cargo/debug/lspf-hello.exe -PserverLog=debug
+```
+
+`serverPath` names any server executable — a `cargo build` debug binary, or one
+from a separate checkout — and a relative path resolves against this repository.
+`serverLog` becomes the server's `RUST_LOG` filter, so `debug` or `lspf=trace`
+reaches the tracing subscriber in `server/src/log_format.rs`. Gradle still
+builds and bundles the release server; the override only changes which
+executable the plugin starts, and a rebuilt server takes effect once the sandbox
+IDE restarts.
+
+Gradle passes both as system properties of the sandbox IDE:
+`lspf-hello.server.path` and `lspf-hello.server.log`. Outside Gradle, set those
+in **Help > Edit Custom VM Options**, or use the environment variables
+`LSPF_HELLO_SERVER_PATH` and `LSPF_HELLO_SERVER_LOG`; the system property wins.
+The names follow `serverBinary` in `gradle.properties`, so a renamed copy of
+this template gets its own and two plugins never read each other's settings.
+Both sources belong to the IDE process, which is why an opened project can never
+select the executable that the plugin runs.
+
+## Troubleshooting
+
+Add `#com.intellij.platform.lsp` to **Help > Diagnostic Tools > Debug Log
+Settings** in the sandbox IDE. The IDE then records the LSP session — the
+command it started, the initialize handshake, and the traffic in both
+directions — in `idea.log`, which **Help > Show Log** reveals in your file
+manager.
+
+The server keeps its own log on stderr so that stdout stays a valid LSP byte
+stream. `-PserverLog=debug` raises its level. To read that log without the IDE
+in the way, run the server directly:
+
+```powershell
+cd server
+cargo run
+```
+
+It then waits for LSP messages on stdin, and `cargo test` drives the same
+executable through a scripted session.
+
+A server that fails to start reports the reason through the plugin: a missing
+*bundled* executable means the installed package was built for another operating
+system, while a missing *configured* executable means `serverPath` or
+`LSPF_HELLO_SERVER_PATH` points at something that is not there.
+
 ## Build and test
 
 Run Rust checks independently from the server directory:

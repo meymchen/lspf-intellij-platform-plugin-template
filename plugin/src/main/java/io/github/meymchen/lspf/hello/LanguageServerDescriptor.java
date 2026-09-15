@@ -9,6 +9,7 @@ import com.intellij.platform.lsp.api.ProjectWideLspClientDescriptor;
 import org.jetbrains.annotations.NotNull;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 /**
  * Connects the IDE to one language server per project.
@@ -54,12 +55,25 @@ final class LanguageServerDescriptor extends ProjectWideLspClientDescriptor {
 
     @Override
     public @NotNull GeneralCommandLine createCommandLine() {
+        // Execute the resolved binary directly; workspace contents never select a command.
+        var command = new GeneralCommandLine(serverExecutable().toString()).withCharset(StandardCharsets.UTF_8);
+        var logFilter = ServerOverrides.logFilter();
+        if (logFilter != null) {
+            // Without an override the server keeps whatever RUST_LOG the IDE inherited.
+            command.withEnvironment("RUST_LOG", logFilter);
+        }
+        return command;
+    }
+
+    private static Path serverExecutable() {
+        var override = ServerOverrides.path();
+        if (override != null) {
+            return ServerBinary.resolveOverride(override);
+        }
         var plugin = PluginManagerCore.getPlugin(PluginId.getId(ServerMetadata.get("pluginId")));
         if (plugin == null) {
             throw new IllegalStateException("Cannot locate the plugin installation");
         }
-        var executable = ServerBinary.resolve(plugin.getPluginPath(), ServerMetadata.get("binary"));
-        // Execute the bundled binary directly; workspace contents never select a command.
-        return new GeneralCommandLine(executable.toString()).withCharset(StandardCharsets.UTF_8);
+        return ServerBinary.resolveBundled(plugin.getPluginPath(), ServerMetadata.get("binary"));
     }
 }
