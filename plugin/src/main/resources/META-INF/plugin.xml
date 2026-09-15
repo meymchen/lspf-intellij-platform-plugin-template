@@ -10,5 +10,8 @@
     <depends>com.intellij.modules.lsp</depends>
     <extensions defaultExtensionNs="com.intellij">
         <platform.lsp.integrationProvider implementation="io.github.meymchen.lspf.hello.LanguageServerIntegrationProvider"/>
+        <!-- dynamic: the page takes its name from the configurable, which reads gradle.properties. -->
+        <applicationConfigurable parentId="tools" dynamic="true"
+                                 instance="io.github.meymchen.lspf.hello.ServerConfigurable" id="io.github.meymchen.lspf.hello.settings"/>
     </extensions>
 </idea-plugin>
