@@ -29,8 +29,8 @@ template does not reliably emit a push event, so if no run appears, start
 **Template cleanup** by hand from the **Actions** tab. The workflow skips this
 template repository and forks, and a second run is a no-op.
 
-**Clone, or download the source archive.** Run the script yourself, from any
-directory:
+**Fork, clone, or download the source archive.** The workflow deliberately skips
+forks, which keep their own name, so run the script yourself from any directory:
 
 ```shell
 python3 .github/template-cleanup/cleanup.py owner/my-lsp-plugin
@@ -41,7 +41,8 @@ needs neither Git history nor a remote, and it works the same in an extracted
 archive. Until it has run, `buildPlugin` warns that the build still carries the
 template's plugin ID.
 
-The language-specific work stays yours:
+The language-specific work stays yours. Every place it waits for you carries a
+`TODO(template)` marker, so `git grep -n "TODO(template)"` lists the whole set:
 
 1. Set `fileExtension` and `languageId` in `gradle.properties`, and rename
    `examples/example.hello` to match. `fileExtension` takes one extension, or

@@ -1,7 +1,9 @@
 <idea-plugin>
     <id>io.github.meymchen.lspf.hello</id>
     <name>LSPF Hello</name>
+    <!-- TODO(template): your own name and URL. The cleanup fills in the repository owner. -->
     <vendor url="https://github.com/meymchen">meymchen</vendor>
+    <!-- TODO(template): what your plugin does. Marketplace shows this text. -->
     <description><![CDATA[
         A Rust language server built with lspf, using the JetBrains LSP API.
         Open a .hello file for example diagnostics, hover, and completion.
