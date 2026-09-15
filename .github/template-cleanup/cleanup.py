@@ -62,6 +62,14 @@ def replace_once(path: Path, old: str, new: str) -> None:
     path.write_text(text.replace(old, new), encoding="utf-8")
 
 
+def replaced(text: str, old: str, new: str, path: Path) -> str:
+    """In-memory replace_once, for a file that is rewritten in several steps."""
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{path}: expected exactly one {old!r}, found {count}")
+    return text.replace(old, new, 1)
+
+
 def replace_all(path: Path, old: str, new: str) -> None:
     text = path.read_text(encoding="utf-8")
     if old not in text:
@@ -121,6 +129,16 @@ def remove_identity_check(root: Path) -> None:
     path.write_text(text[:start] + text[end:].lstrip("\n"), encoding="utf-8")
 
 
+def remove_ci_self_test(root: Path) -> None:
+    """Drop the CI job that runs this script; there is nothing left to run in a copy."""
+    path = root / ".github/workflows/ci.yml"
+    text = path.read_text(encoding="utf-8")
+    end_marker = "  # --- end template self-test ---\n"
+    start = text.index("  # --- template self-test")
+    end = text.index(end_marker, start) + len(end_marker)
+    path.write_text(text[:start].rstrip("\n") + "\n" + text[end:], encoding="utf-8")
+
+
 def environment_prefix(server_binary: str) -> str:
     """Mirror ServerOverrides.environmentVariable, which names the developer overrides."""
     return re.sub(r"[^A-Za-z0-9]", "_", server_binary).upper()
@@ -130,16 +148,8 @@ def rewrite_readme(root: Path, name: str, repository: str, server_binary: str) -
     path = root / "README.md"
     text = path.read_text(encoding="utf-8")
 
-    text = text.replace(
-        "# lspf IntelliJ Platform plugin template\n",
-        f"# {name}\n",
-        1,
-    )
-    text = text.replace(
-        f"`{OLD_ROOT_NAME}/server/`",
-        f"`{repository}/server/`",
-        1,
-    )
+    text = replaced(text, "# lspf IntelliJ Platform plugin template\n", f"# {name}\n", path)
+    text = replaced(text, f"`{OLD_ROOT_NAME}/server/`", f"`{repository}/server/`", path)
 
     # The developer overrides are named after the server binary, so the
     # troubleshooting sections have to follow it. Both spellings are specific
@@ -254,6 +264,7 @@ def main() -> None:
     )
 
     remove_identity_check(root)
+    remove_ci_self_test(root)
     rewrite_readme(root, plugin_name, repository, server_binary)
 
     shutil.rmtree(root / ".github/template-cleanup")
