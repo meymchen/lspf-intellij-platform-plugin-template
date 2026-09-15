@@ -1,6 +1,9 @@
 name: CI
 on:
+  # A branch push and its pull request are the same commit. Running both doubles the
+  # runner time and, because each run writes the same cache entries, the cache too.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
