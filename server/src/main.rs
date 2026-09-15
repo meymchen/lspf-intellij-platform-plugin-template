@@ -13,6 +13,9 @@ use lspf::types::{
 use lspf::{CancellationToken, LspError, Server, ServerContext};
 use tracing::warn;
 
+// TODO(template): replace the state and the handlers below with your language's.
+// The server is an ordinary lspf crate; see https://github.com/meymchen/lspf.
+
 /// Application-owned state shared by all handlers.
 ///
 /// Put parsed syntax trees, indexes, or configuration here. Documents and the

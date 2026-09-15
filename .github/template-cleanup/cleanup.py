@@ -100,7 +100,8 @@ NEXT_STEPS = """## Next steps
 
 The template cleanup already applied this repository's name to `gradle.properties`,
 `settings.gradle.kts`, `plugin.xml`, the Java package, and the Rust package. What
-remains is language-specific:
+remains is language-specific. Every place that waits for you carries a
+`TODO(template)` marker, so `git grep -n "TODO(template)"` lists the whole set:
 
 1. Set `fileExtension` and `languageId` in `gradle.properties`, and rename
    `examples/example.hello` to match. `fileExtension` takes one extension, or

@@ -21,7 +21,8 @@ public final class LanguageServerIntegrationProvider implements LspIntegrationPr
     @Override
     public @NotNull LspClientWidgetItem createWidgetItem(@NotNull LspClient lspClient, @Nullable VirtualFile currentFile) {
         // Gives this plugin its own entry in the Language Services widget, linked to its
-        // settings page. Replace the icon with your own once you have one.
+        // settings page.
+        // TODO(template): ship your own icon and use it here.
         return new LspClientWidgetItem(lspClient, currentFile, AllIcons.Webreferences.Server,
                 ServerConfigurable.class);
     }
