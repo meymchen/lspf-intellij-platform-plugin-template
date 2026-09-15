@@ -83,6 +83,13 @@ tasks.withType<PrepareSandboxTask>().configureEach {
     }
 }
 
+// The sandbox copy above is executable on disk, but the distribution archive is written
+// with uniform file permissions, so the entry has to be marked again. Without this the
+// installed plugin cannot start its own server on Linux or macOS.
+tasks.named<Zip>("buildPlugin") {
+    filesMatching("**/server/*") { permissions { unix("rwxr-xr-x") } }
+}
+
 val generateServerMetadata = tasks.register("generateServerMetadata") {
     val output = layout.buildDirectory.dir("generated/serverMetadata")
     inputs.property("serverBinary", serverExecutable)

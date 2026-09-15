@@ -37,6 +37,8 @@ jobs:
         with:
           path: |
             ~/.gradle/caches/modules-2
+            !~/.gradle/caches/modules-2/*.lock
+            !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
           key: gradle-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts', 'gradle.properties') }}
           restore-keys: gradle-${{ runner.os }}-
@@ -77,10 +79,6 @@ jobs:
           name: plugin-${{ runner.os }}-${{ runner.arch }}
           path: build/distributions/*.zip
           if-no-files-found: error
-      - name: Drop Gradle's lock files before the cache is saved
-        if: always()
-        shell: bash
-        run: rm -f ~/.gradle/caches/modules-2/*.lock ~/.gradle/caches/modules-2/gc.properties
 
   # --- template self-test; the template cleanup removes this job ---
   # The cleanup script is what this repository exists to provide, and it fails by
@@ -107,6 +105,8 @@ jobs:
         with:
           path: |
             ~/.gradle/caches/modules-2
+            !~/.gradle/caches/modules-2/*.lock
+            !~/.gradle/caches/modules-2/gc.properties
             ~/.gradle/wrapper/dists
           key: gradle-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'settings.gradle.kts', 'gradle.properties') }}
           restore-keys: gradle-${{ runner.os }}-
@@ -169,7 +169,4 @@ jobs:
       - name: Build and test the generated project
         working-directory: generated
         run: bash ./gradlew check --console=plain
-      - name: Drop Gradle's lock files before the cache is saved
-        if: always()
-        run: rm -f ~/.gradle/caches/modules-2/*.lock ~/.gradle/caches/modules-2/gc.properties
   # --- end template self-test ---
