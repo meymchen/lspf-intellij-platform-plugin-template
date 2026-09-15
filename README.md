@@ -81,9 +81,10 @@ and copies its executable into the plugin distribution.
 ## Run locally
 
 Install JDK 25 and Rust 1.98 or later through rustup. Put Java and Cargo on
-PATH, or set JAVA_HOME and CARGO. The Gradle toolchain defaults to Java 25
-to read the IntelliJ IDEA 2026.2 platform classes. Generated plugin bytecode
-still targets Java 21; this does not make the target IDE runnable on Java 21.
+PATH, or set JAVA_HOME and CARGO. The Gradle toolchain defaults to Java 25,
+and the plugin targets that same release: IntelliJ IDEA 2026.2 is compiled for
+Java 25 and bundles a Java 25 runtime, so no IDE that can load this plugin runs
+on anything older. The `javaToolchain` property moves both.
 
 Open the repository as a Gradle project in IntelliJ IDEA. Select the shared
 **Run plugin** configuration, or run:

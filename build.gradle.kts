@@ -8,12 +8,14 @@ plugins {
     id("org.jetbrains.intellij.platform")
 }
 
+// IntelliJ Platform 2026.2 is compiled for Java 25 and its IDEs bundle a Java 25
+// runtime, so the toolchain reads the platform classes and the plugin targets the
+// same release. Overriding javaToolchain moves both together.
+val javaVersion = providers.gradleProperty("javaToolchain").orElse("25").map(String::toInt)
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(providers.gradleProperty("javaToolchain").orElse("25").get().toInt())
-    }
+    toolchain { languageVersion = javaVersion.map(JavaLanguageVersion::of) }
 }
-tasks.withType<JavaCompile>().configureEach { options.release = 21 }
+tasks.withType<JavaCompile>().configureEach { options.release = javaVersion }
 
 dependencies {
     testImplementation("junit:junit:4.13.2")
